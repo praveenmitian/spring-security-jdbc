@@ -1,0 +1,199 @@
+Exception handling
+5 Different Ways to Create Objects in Java
+What are Object class methods, and its uses(Eg; wait, notify)
+
+What is 
+Authentication, Authorization, Pricipal, Authority, Role.
+Authentication: Who are you? You tell who are you, but you need to prove by providing somekind of id, but impersonator cant.
+1. Knowledge based authentication: PASSWORD, Pincode, Answer to secret/Personal question. Adv: Easy to implement and use. DisAdv: Not fully safe(If someone steel password, they can access your account, they can impersonate as you)
+2. Possession Based Authentication: Phone/Text message, Key card/Badges(while going inside building we swipe), Access key token device.
+3. Knowledge Based Authentication + Possession Based Authentication(Multi Factor Authentication): Password + Some key.
+Authorization: What you want? I am trying to access, there is no need to show any id. But spring security exmain the user allowed to do that. Can this user do this?(Can do what they trying to do?) It is just yes/no kind of answer.
+
+Operation | Can this user do this?
+Some action |  Yes
+Some other action | No
+Another action | Yes
+
+Realtime example: In retail store everyone working in shop can login to application as user.They can authenticate with user id and password.Once they authenticated, what each person do in application depends on who the user is(like manger, store keeper etc).
+What they can do?
+Store clerk:
+Access point of sale functionality.
+Check item in stock(inventory)
+
+Department(Admin) Manager:
+Above access +
+Department reports.
+Store Manager:
+Above +
+Store reports
+Store financials.
+
+Based on this spring security tell wherther the user can perform this operation or not.
+For Authorization need authentication first, we needto know the who user is first, before making decision where user can perform some operationor not.
+Authentication: Who the user is?
+Authorization: Are they allowed to do this?
+
+Pricipal:
+Currently logged in user.App rembers principal as currently logged in user in contex of application. So we dont need to log in each andevery time.
+One user can have multiple IDs.
+Take google one person can have multiple accounts. In a system multiple id can be logged in to single gmail application.
+But there's usually just one logged in user(per request) If user loggedin as A then principal belong to A, if user switch to B account then principal belong to B.
+So principal is currently loggedin user or currently loggedin in account.
+
+How does authorization happen?
+We have decide(specify) before if user is this allow then to use these action. It is bunch of persmission is allowed for given user. In spring security this type of persmission is called Authority/Granted Authority. 
+
+Realtime example as Retail store
+Authorities:
+Store clerk:
+do_checkout
+make_store_announcement
+Department Manager:
+Above +
+view_department_financials
+view_department_inventory
+Store Manager:
+Above +
+view_store_financials
+
+Above are the finegrain authority, we can configure these authority in spring security. Spring security take care of rest.
+Authorities are fine-grained:
+If retail store hire five store clerk, each time some one has to assign authority to each one. Some time store manger is hired someone has to assign authorities of store manager(Listed above authorities must assigned to new clerk and store manager) by someone. 
+This is were we create concept of roles.
+
+Role:
+Group of authorities.(that are usually assigned together)
+role_store_clerk:
+do_checkout
+make_store_announcement
+role_dept_manager:
+do_checkout
+make_store_announcement
+view_department_financials
+view_department_inventory
+role_store_mgr:
+role_dept_manager:
+do_checkout
+make_store_announcement
+view_department_financials
+view_department_inventory
+view_store_financials
+
+Roles are coarse-grained unlike the fine-grained permission that authorities have.
+
+Previsouly when url request is come from client, the servelt container receives the request and redirect to specfic servelt to handle the request. Befor that there will be layers of filter to verify the url for ex whether the url has crroct/proper header etc, But now because of framework in behaing the same thing hapens. But it is not shown. If we add spring security dependency, by default it will redirct to log in form. It is done by spring security. It will add the spring security filter for all the url request.
+
+Adding spring security to Spring Boot Application.
+Spring security defalt behaviour is 
+Adding mandatory authentication to URLs
+Adds log in form
+Handles login error
+Creates a user and sets of default password.
+Spring security generates new password every time we restart the application(User name is by default user).
+
+How to configure Authentication in Spring Security:
+AuthenticationManager is something manages authentication in spring boot application.
+Has authenticate() method will return yes or no based on succesfull authentication.
+
+We not work directly with AuthenticationManager, we work will AuthenticationManagerBuilder class
+
+Steps:
+Step1: Get hold of AuthenticationManagerBuilder
+Step2: Set the configuration on it.
+
+You -> AuthenticationManagerBuilder
+AuthenticationManager-> You -> What type of Authentication you want?
+You -> AuthenticationManagerBuilder -> In memory auth please.
+AuthenticationManager-> You -> tell me username, password and role of in memory users are. 
+You -> AuthenticationManagerBuilder -><User-info> we configure AuthenticationManagerBuilder with user info.
+
+Now with that AuthenticationManagerBuilder, a new AuthenticationManager has been created some how with that value of user info we given. We not directly deal with AuthenticationManager, we are dealing with AuthenticationManagerBuilder.
+
+How do I get AuthenticationManagerBuilder?
+configure(AuthenticationManagerBuilder) method. 
+
+
+How to configure Spring Security Authorization?
+configure(HttpSecurity) method.
+
+How Spring Security Authentication works?
+Filters:
+in servlet one url mapped to one servlet container. But filter can be mapped to any number of url,ie /admin/** any url with /admin/1, /admin/muuser can be intrepted by single filter.
+
+We are working on Spring boot so simplyy adding dependency spring will do everthing for us. But if we not working on spring boot ie Spring application, we need to add manually
+<filter>
+<filter-name>
+springSecurityFilterChain
+</filter-name>
+<filter-class>
+org.springframework.web.filter.DeligatingFilterProxy
+</filter-class>
+</filter>
+
+<filter-mapping>
+<filter-name>
+springSecurityFilterChain
+</filter-name>
+<url-pattern>
+/*
+</url-pattern>
+</filter-mapping>
+
+DeligatingFilterProxy is the filter which ha lot of filter one of which is Authentication filter.
+DeligatingFilterProxy is the class responsible for filter mapping which is done by spring boot for us. If not spring boot we need to add manually.
+
+What Authentication actually do?
+Input->Authentication->Output
+Credentials Username & Password-> Authentication -> Boolean (not return boolean yes or no, true or false, succesfull or failure) but it return principal ie the information about logged in user.
+
+When spring security performs Authentication it keeps track of both the input and the output using a type of object called Authentication. Authentication is internal spring security interface and the Authentication object is ment to hold credentials before Authentication, once user is Authenticated it hold the principal.
+
+AuthenticationProvider is something actully do Authentication. It is an interface which has method authenticate() and we need to have implement of this method in our application and tell spring security about this.Spring security will call this method authenticate the user.
+Input->AuthenticationProvider->Output
+Authentication(Credentials) -> AuthenticationProvider -> Authentication(Pricipal)
+
+There are many ways for authentication in web application user id & password authentication, OAuth based authentication, SSO or LDAP based authentication. But the point is one application have multiple authentication startigies.
+
+1.AuthenticationProvider authenticate() -> I do password auth
+2.AuthenticationProvider authenticate() -> I do OAuth auth
+3.AuthenticationProvider authenticate() -> I do LDAP auth
+
+How to these different AuthenticationProvider work with each other. In order to coordinate all of them there is a special type in spring security called AuthenticationManager authenticate() 
+
+ProviderManager implements
+AuthenticationManager authenticate()
+
+if we call with LDAP auth, AuthenticationManager authenticate() it will re directs to 1.AuthenticationProvider authenticate() wil you support LDAP auth, if negative response then calls second etc.
+
+For this which Auth the AuthenticationProvider support, in addition to authenticate() method there is a support() method. This is the method ProviderManager implemention of AuthenticationManager calls to find right AuthProvider for each and every Auth attempt.
+
+What do the AuthProvider need inorder to do Auth? 
+
+I am the AuthProvider someone here are the credentials can you them authenticate for me? What you need to do inorder to the job?  We need to access Identity store
+AuthenticationProvider authenticate() -> Given Username -> Identity store -> Return User object, once we get the user info we can verify credentials saved in system same as used for Auth. 
+
+This is the prety much same for all AuthProvider need to do given an Auth attempt, every provider need to retrive the user from system some how and then verify the credentials to make surr the account is not locked, password is not expired, user is valid and so on for all Auth type(LDAP, OAuth etc).
+
+Whether we are doing LDAP, DB stored Auth only part that might change is the how you retrive this user from the system and where you retrive it.Once user is retrived the checks you make like verification of authorization is all the same. Which is why spring security extrcted that part out. The retrive of User info part out into its own  entity called UserDetailsService loadUserByUserName() takes username and return UserDetails. This object litrelly called UserDetails.
+
+All the information about the user whether user account is valid, whether it is locked or unlocked all the info are in UserDetails object what the userservice returns.
+
+Once UserDetails is returned the AuthProvider has everything it needs to AUth.
+
+AuthenticationProvider authenticate() -> Given Username -> UserDetailsService loadUserByUserName() -> Return User object,
+
+AuthFilter -> Interpts Auth request-> It creates Auth Obj(Credentials-input) -> AuthManager authenticate() -> then AuthManager finds the right provider using the support method of AuthProvider -> support() -> then the AuthManager calls authenticate method on the selected provider and passess Auth object -> authenticate() -> AuthProvider looks up corresponding user in the system by using the user details service, the user detail service retun UserDetail instqance which the AuthProvider then verifies and then Auth happens, if Auth is success  the Auth object is retured with Pricipal and Authorities. Pricipal often being instance of UserDetails object. Then Auth obj goes all the way back to AuthFilter that started it all.
+
+Now AuthFilter gets Auth object with principal object now what does it do. It takes that obj and saves it in thread contex
+
+In every step of web application need to know who the currently logged in user is. There is a security contex that is associated with current thread. This Auth object as result of succesfull Auth is actually put into security contex in the thread local obj for use in authorization for use in identifying the current principal and more. 
+
+And what about sub sequent request, you cant hold on this in thread local has to be in user session. is't well, there is a mech to allow for this context to be associated with the session this is why you Auth only once and the we can access the app for the duration of that session and that work is done by another filter, there are bunch of filter in spring security filter chain of course which do various other thing. There is one filter which manages the user session, it takes in the Authucated principal and associates it with the user's session and that's the reason why dont have to auth with every request for every sub sequent request this filter is also responsible for taking that context from session and saving it to thread local again so that its available for the framework.
+
+That's authentication this pattern that we learned here workes same irrespective of what authentication mech is, whether you are using password based auth or OAuth, JWT, Kerberos it really dosent matter underlying concept is same
+
+What happens if Auth is not succesfull?
+In this case AuthProvider thorws UnAuth exception and that exception bubble all the way upto AuthFilter and either something catches it or user see the exception thrown possibly an error page.
+
+
